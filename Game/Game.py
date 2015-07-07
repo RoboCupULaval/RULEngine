@@ -7,35 +7,36 @@ from ..Util.constant import PLAYER_PER_TEAM
 
 
 class Game():
-    def __init__(self, field, referee, blue_team, yellow_team, blue_team_strategy):
+    def __init__(self, field, referee, blue_team, yellow_team, is_team_yellow, team_strategy):
         self.field = field
         self.referee = referee
         self.blue_team = blue_team
         self.yellow_team = yellow_team
-        self.blue_team_strategy = blue_team_strategy
+        self.is_team_yellow = is_team_yellow
+        self.team_strategy = team_strategy
 
     def update_strategies(self):
         state = self.referee.command.name
         if state == "HALT":
-            self.blue_team_strategy.on_halt()
+            self.team_strategy.on_halt()
 
         elif state == "NORMAL_START":
-            self.blue_team_strategy.on_start()
+            self.team_strategy.on_start()
 
         elif state == "STOP":
-            self.blue_team_strategy.on_stop()
+            self.team_strategy.on_stop()
 
     def get_commands(self):
-        blue_team_commands = self._get_blue_team_commands()
+        team_commands = self._get_team_commands()
 
-        self.blue_team_strategy.commands.clear()
+        self.team_strategy.commands.clear()
 
-        return blue_team_commands
+        return team_commands
 
-    def _get_blue_team_commands(self):
-        blue_team_commands = self.blue_team_strategy.commands
-        blue_team_commands = self._remove_commands_from_opponent_team(blue_team_commands, self.yellow_team)
-        return blue_team_commands
+    def _get_team_commands(self):
+        team_commands = self.team_strategy.commands
+        team_commands = self._remove_commands_from_opponent_team(team_commands, self.yellow_team)
+        return team_commands
 
     @staticmethod
     def _remove_commands_from_opponent_team(commands, opponent_team):
@@ -61,8 +62,10 @@ class Game():
         self._update_players(vision_frame)
 
     def _update_ball(self, vision_frame):
-        ball_position = Position(vision_frame.balls[0].position.x, vision_frame.balls[0].position.y,
+        ball_position = Position(vision_frame.balls[0].position.x , vision_frame.balls[0].position.y,
                                  vision_frame.balls[0].position.z)
+        if self.is_team_yellow:
+            ball_position.flipX()
         self.field.move_ball(ball_position)
 
     def _update_players(self, vision_frame):
@@ -75,6 +78,8 @@ class Game():
     def _update_players_of_team(self, players, team):
         for player in players:
             player_position = Position(player.pose.coord.x, player.pose.coord.y, player.pose.coord.z)
+            if self.is_team_yellow:
+                player_position.flipX()
             player_orientation = (player.pose.orientation * 180) / math.pi
             player_pose = Pose(player_position, player_orientation)
             team.move_and_rotate_player(player.robot_id, player_pose)

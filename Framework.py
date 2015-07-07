@@ -7,6 +7,8 @@ from .Game.Team import Team
 from .Util.constant import PLAYER_PER_TEAM
 from . import rule
 
+is_team_yellow = True
+
 def create_teams():
     blue_players = []
     yellow_players = []
@@ -43,7 +45,7 @@ def create_game(strategy):
     blue_team_strategy = strategy(field, referee, blue_team, yellow_team)
     # yellow_team_strategy = WorstStrategy(field, referee, yellow_team, blue_team)
 
-    game = Game(field, referee, blue_team, yellow_team, blue_team_strategy)
+    game = Game(field, referee, blue_team, yellow_team, is_team_yellow, blue_team_strategy)
 
     return game
 
@@ -69,7 +71,7 @@ def update_strategies(game):
 def send_robot_commands(game, engine):
     commands = game.get_commands()
     for command in commands:
-        robot_command = command.to_robot_command()
+        robot_command = command.to_robot_command(is_team_yellow)
         engine.send_robot_command(robot_command)
 
 

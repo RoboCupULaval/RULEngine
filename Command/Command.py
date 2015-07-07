@@ -19,7 +19,7 @@ class _Command(object):
         self.pose = Pose()
         self.team = team
 
-    def to_robot_command(self):
+    def to_robot_command(self, is_team_yellow=False):
         robot_command = rule.RobotCommand()
         robot_command.is_team_yellow = self.team.is_team_yellow
         robot_command.dribble = self.dribble
@@ -30,6 +30,8 @@ class _Command(object):
         robot_command.stop = self.is_speed_command
         robot_command.pose.coord.x = self.pose.position.x
         robot_command.pose.coord.y = self.pose.position.y
+        if is_team_yellow:
+            robot_command.pose.coord.flipX()
         robot_command.pose.orientation = self.pose.orientation * math.pi / 180
 
         return robot_command
