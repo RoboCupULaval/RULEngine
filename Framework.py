@@ -7,7 +7,7 @@ from .Game.Team import Team
 from .Util.constant import PLAYER_PER_TEAM
 from . import rule
 
-is_team_yellow = True
+is_team_yellow = False
 
 def create_teams():
     blue_players = []

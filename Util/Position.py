@@ -4,5 +4,8 @@ class Position():
         self.y = y
         self.z = z
 
+    def flipX(self):
+        self.x = -self.x
+
     def __str__(self):
         return "x= " + str(self.x) + ", y= " + str(self.y) + ", z= " + str(self.z)

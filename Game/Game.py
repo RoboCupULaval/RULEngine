@@ -65,6 +65,7 @@ class Game():
         ball_position = Position(vision_frame.balls[0].position.x , vision_frame.balls[0].position.y,
                                  vision_frame.balls[0].position.z)
         if self.is_team_yellow:
+            print(ball_position.__dict__)
             ball_position.flipX()
         self.field.move_ball(ball_position)
 
