@@ -6,6 +6,7 @@ from .Game.Referee import Referee
 from .Game.Team import Team
 from .Util.constant import PLAYER_PER_TEAM
 from . import rule
+import time
 
 is_team_yellow = False
 
@@ -91,6 +92,7 @@ def start_game(strategy):
     game = create_game(strategy)
 
     while True:  # TODO: Replace with a loop that will stop when the game is over
+        time.sleep(0.008)
         update_game_state(game, engine)
         update_players_and_ball(game, engine)
         update_strategies(game)
