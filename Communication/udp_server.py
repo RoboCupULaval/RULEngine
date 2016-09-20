@@ -87,6 +87,36 @@ class GrSimCommandSender(object):
 
         self._send_packet(packet)
 
+class GrSimDebugSender(GrSimCommandSender):
+    """ Service qui envoie les commandes de mouvements aux robots. """
+
+    def send_command(self, command):
+        """
+            Construit le paquet à envoyer à partir de la commande reçut.
+
+            :param command: Command pour un robot
+        """
+        packet = grSim_Packet.grSim_Packet()
+        grsim_command = packet.replacement.robots.add()
+        grsim_command.id = command.player.id
+        grsim_command.x = command.pose.position.x
+        grsim_command.y = command.pose.position.y
+        grsim_command.dir = command.pose.orientation
+        grsim_command.yellowteam = command.team.is_team_yellow
+
+        self._send_packet(packet)
+
+
+    def place_ball(self, position):
+        packet = grSim_Packet.grSim_Packet()
+        ball_replacement = packet.replacement.ball.add()
+        ball_replacement.x = position.x
+        ball_replacement.y = position.y
+        ball_replacement.vx = 0
+        ball_replacement.vy = 0
+
+        self._send_packet(packet)
+
 class DebugCommandSender(object):
     """
         Définition du service capable d'envoyer des paquets de débogages au
