@@ -17,7 +17,7 @@ from .Game.Referee import Referee
 from .Communication.vision import Vision
 from .Communication.referee import RefereeServer
 from .Communication.udp_server import GrSimCommandSender, DebugCommandSender,\
-                                      DebugCommandReceiver
+                                      DebugCommandReceiver, GrSimDebugSender
 from .Communication.serial_command_sender import SerialCommandSender
 from .Command.command import Stop
 from .Util.exception import StopPlayerError
@@ -43,6 +43,7 @@ class Framework(object):
         self.command_sender = None
         self.debug_sender = None
         self.debug_receiver = None
+        self.grsim_syncer = None
         self.game = None
         self.is_team_yellow = is_team_yellow
         self.ai_coach = None
@@ -142,6 +143,8 @@ class Framework(object):
             self.debug_receiver = DebugCommandReceiver(UI_DEBUG_MULTICAST_ADDRESS, 10021)
             self.referee = RefereeServer(LOCAL_UDP_MULTICAST_ADDRESS)
             self.vision = Vision(LOCAL_UDP_MULTICAST_ADDRESS)
+
+            self.grsim_syncer = GrSimDebugSender(LOCAL_UDP_MULTICAST_ADDRESS, 20011)
         else:
             self.stop_game()
 
@@ -206,6 +209,7 @@ class Framework(object):
         if cmd_time - self.last_cmd_time > CMD_DELTA_TIME:
             self.last_cmd_time = cmd_time
             commands = self._get_coach_robot_commands()
+            self.grsim_syncer.send_command(commands[4])
             commands[4] = commands[4].to_speed_command()
             commands[4].pose.orientation = 0
             self.command_sender.send_command(commands[4])
