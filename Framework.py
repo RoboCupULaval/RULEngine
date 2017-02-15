@@ -201,6 +201,7 @@ class Framework(object):
             self._update_players_and_ball(vision_frame)
             self._update_debug_info()
             robot_commands = self.ia_coach_mainloop()
+            self.game_world.game.set_command(robot_commands)
 
             # Communication
             self._send_robot_commands(robot_commands)

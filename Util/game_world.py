@@ -13,3 +13,4 @@ class GameWorld:
 
     def set_team_color_svc(self, p_team_color_svc):
         self.team_color_svc = p_team_color_svc
+
