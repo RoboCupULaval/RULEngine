@@ -8,9 +8,12 @@ import numpy as np
 
 class Player:
     def __init__(self, team, id):
+
         self.cmd = [0, 0, 0]
         self.id = id
+
         self.team = team
+
         self.pose = Pose()
         dt = DELTA_T
         self.transition_model = [[1, 0, dt, 0, 0, 0], [0, 1, 0, dt, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0],
@@ -18,11 +21,11 @@ class Player:
         control_input_model = [[0, 0, 0], [0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
         observation_model = [[1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0]]
 
-        process_covariance = 10 ** (-4) * np.eye(6)
-        observation_covariance = np.eye(3) / 1
+        process_covariance = 10 ** (-2) * np.eye(6)
+        observation_covariance = np.eye(3) * 100
 
         initial_state_estimation = [self.pose.position.x, self.pose.position.y, 0, 0, self.pose.orientation, 0]
-        initial_state_covariance = np.eye(6) / 1000
+        initial_state_covariance = np.eye(6) * 1000
         self.kf = Kalman(self.transition_model, control_input_model, observation_model, process_covariance,
                          observation_covariance, initial_state_estimation, initial_state_covariance)
 
@@ -31,35 +34,48 @@ class Player:
         self.filtered_state_covariances = np.eye(6)
         self.observations = [self.pose.position.x, self.pose.position.y, self.pose.orientation]
 
+        if self.id == 1:
+            self.val_unfiltered = open('unfiltered.txt', 'w')
+            self.val_filtered = open('filtered.txt', 'w')
+
     def has_id(self, pid):
         return self.id == pid
 
     def update(self, pose, delta=DELTA_T):
+        if self.id == 1 and not self.team.is_team_yellow():
+            self.val_unfiltered.write("{}, {}, {}\n".format(pose.position.x, pose.position.y, pose.orientation))
+        new_pose = pose
+        #print(self.id)
+        #print("#1", pose.position.x, pose.position.y, pose.orientation)
         self.observations = [pose.position.x, pose.position.y, pose.orientation]
-        self.transition_model = [[1, 0, delta, 0, 0, 0], [0, 1, 0, delta, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 1, delta], [0, 0, 0, 0, 0, 0]]
-        print('cmd kalman', self.cmd[0], self.cmd[1], self.cmd[2])
+        self.transition_model = [[1., 0., delta, 0., 0., 0.], [0., 1., 0., delta, 0., 0.], [0., 0., 1, 0., 0., 0.],
+                                 [0., 0., 0., 1, 0., 0.],
+                                 [0., 0., 0., 0., 1., delta], [0., 0., 0., 0., 0., 1]]
         output = self.kf.filter(self.observations, self.cmd, self.transition_model)
-        self.pose.position.x = output[0]
-        self.pose.position.y = output[1]
-        self.velocity = [output[2], output[3], 0]
-        self.pose.orientation = 0
-
-        old_pose = self.pose
-        delta_position = pose.position - old_pose.position
-        # if self.id == 1 and not self.team.is_team_yellow():
-        #     print(self.pose.position.x, self.pose.position.y)
+        new_pose.position.x = float(output[0])
+        new_pose.position.y = float(output[1])
+        #self.velocity = [output[2], output[3], output[5]]
+        new_pose.orientation = float(output[4])
+        #print("#2", new_pose.position.x, new_pose.position.y, new_pose.orientation)
+        # old_pose = self.pose
+        #delta_position = new_pose.position - old_pose.position
+        if self.id == 1 and not self.team.is_team_yellow():
+            print(self.pose.position.x, self.pose.position.y)
 
         # try:
         #     self.velocity.x = delta_position.x / delta
         #     self.velocity.y = delta_position.y / delta
         # except ZeroDivisionError:
         #     self.velocity = Vector(0, 0)
-        # self.pose = pose
+
+        self.pose = new_pose
+        if self.id == 1 and not self.team.is_team_yellow():
+            self.val_filtered.write("{}, {}, {}\n".format(self.pose.position.x, self.pose.position.y,
+                                                            self.pose.orientation))
 
     def set_command(self, cmd):
-        self.cmd = [cmd.pose.position.x, cmd.pose.position.y, self.pose.orientation]
-
+        self.cmd = [cmd.pose.position.x, cmd.pose.position.x, cmd.pose.orientation]
+        #self.cmd = [0, 0, 0]
 
 class Kalman:
     def __init__(self, transition_model, control_input_model, observation_model, process_covariance,
@@ -79,16 +95,17 @@ class Kalman:
 
     def update(self, observation):
         y = np.array(observation) - np.dot(self.H, self.x)
+        #print(y)
         S = np.dot(np.dot(self.H, self.P), np.transpose(self.H)) + self.R
         K = np.dot(np.dot(self.P, np.transpose(self.H)), np.linalg.inv(S))
 
         self.x += np.dot(K, y)
         self.P = np.dot((np.eye(self.P.shape[0]) - np.dot(K, self.H)), self.P)
 
-    def filter(self, observation, command, transition_model = None):
+    def filter(self, observation, command, transition_model = None, ):
         if transition_model is None:
             self.F = np.array(transition_model)
 
         self.predict(command)
         self.update(observation)
-        return self.x.tolist()
+        return self.x
